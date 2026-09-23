@@ -10,7 +10,7 @@ This repository contains automated infrastructure scripts, observations, and ver
 ## Progress Checklist
 
 - [x] **Part 1:** Service Identity (`01_create_user.sh`) - Idempotent system account setup
-- [ ] **Part 2:** Memory-backed Scratch Storage (`02_setup_tmpfs.sh`)
+- [x] **Part 2:** Memory-backed Scratch Storage (`02_setup_tmpfs.sh`)
 - [ ] **Part 3:** Stress Testing & Fault Injection (`03_stress_and_populate.sh`)
 - [ ] **Part 4:** SSH Key-Based Access Configuration
 - [ ] **Part 5:** SSH Hardening (Port 2222, Least Privilege)
@@ -32,3 +32,17 @@ In production infrastructure, applications should never run under `root` or a pe
 * **Home Directory (`-m`):** Provisions a dedicated home path (`/home/$SVC_NAME`) required for storing service-specific configurations like SSH keys.
 * **No-Interactive Login Shell (`-s /usr/sbin/nologin`):** Blocks direct interactive shell sessions via SSH or TTY. If the service is compromised via remote execution, the attacker cannot spawn an interactive shell directly as this identity.
 * **Verification:** Outputs user credentials and group assignments via `id` and `getent passwd` to validate successful provisioning.
+
+
+### Part 2: Fast Scratch Space (`02_setup_tmpfs.sh`)
+
+#### Purpose & DevOps Context
+
+To handle high-throughput ephemeral caching workloads without introducing physical disk I/O bottlenecks, services use `tmpfs`—a virtual memory-backed filesystem. Setting a hard boundary (`size=256M`) is vital: an unconstrained `tmpfs` will continuously consume RAM as files are written, eventually triggering kernel Out-Of-Memory (OOM) interventions.
+
+#### Script Implementation Highlights
+
+* **Mount Verification & Idempotency:** Employs `mountpoint -q` to verify whether `/mnt/${SVC_NAME}_tmp` is already an active mount, avoiding redundant mount calls on repeated executions.
+* **Strict Memory Capping:** Mounts using `-o size=256M` to strictly encapsulate memory allocation inside system RAM.
+* **Access Boundary:** Reassigns path ownership to `$SVC_NAME:$SVC_NAME` via `chown`, ensuring the unprivileged service user can write files while preserving isolated directory permissions.
+* **Storage Validation:** Runs `df -h` to verify mount point configuration and capacity constraints.
