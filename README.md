@@ -46,3 +46,18 @@ To handle high-throughput ephemeral caching workloads without introducing physic
 * **Strict Memory Capping:** Mounts using `-o size=256M` to strictly encapsulate memory allocation inside system RAM.
 * **Access Boundary:** Reassigns path ownership to `$SVC_NAME:$SVC_NAME` via `chown`, ensuring the unprivileged service user can write files while preserving isolated directory permissions.
 * **Storage Validation:** Runs `df -h` to verify mount point configuration and capacity constraints.
+
+
+
+### Part 3: Chaos Engineering & Fault Injection (`03_stress_and_populate.sh`)
+
+#### Purpose & DevOps Context
+
+Validating system reliability under adverse conditions prevents unexpected production failures. By intentionally driving disk writes to capacity, loading multiple CPU cores, and allocating aggressive memory buffers, we verify kernel thresholds and metric behaviors under load.
+
+#### Script Implementation Highlights
+
+* **CLI Flag Parsing:** Incorporates a `case` dispatcher supporting `--cpu`, `--mem`, `--disk`, and `--all` modes.
+* **Controlled Disk Saturation:** Writes pseudo-random binary data via `dd` until filesystem limits are met. Demonstrates safe write termination without kernel file corruption.
+* **CPU & RAM Saturation:** Invokes `stress-ng` executing under the unprivileged service identity (`sudo -u "$SVC_NAME"`), constraining stress threads to dedicated resource budgets.
+* **Telemetry Verification:** Captures transient memory utilization swings across `free -h` intervals and verifies through `dmesg | grep -i oom` whether the Linux kernel invoked the Out-Of-Memory Killer.
