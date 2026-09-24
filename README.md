@@ -11,12 +11,12 @@ This repository contains automated infrastructure scripts, observations, and ver
 
 - [x] **Part 1:** Service Identity (`01_create_user.sh`) - Idempotent system account setup
 - [x] **Part 2:** Memory-backed Scratch Storage (`02_setup_tmpfs.sh`)
-- [ ] **Part 3:** Stress Testing & Fault Injection (`03_stress_and_populate.sh`)
-- [ ] **Part 4:** SSH Key-Based Access Configuration
-- [ ] **Part 5:** SSH Hardening (Port 2222, Least Privilege)
-- [ ] **Part 6:** Automated Telemetry & Maintenance (Cron)
-- [ ] **Part 7:** Log Rotation Management (`logrotate`)
-- [ ] **Part 8:** Orderly Teardown (`04_cleanup.sh`)
+- [x] **Part 3:** Stress Testing & Fault Injection (`03_stress_and_populate.sh`)
+- [x] **Part 4:** SSH Key-Based Access Configuration
+- [x] **Part 5:** SSH Hardening (Port 2222, Least Privilege)
+- [x] **Part 6:** Automated Telemetry & Maintenance (Cron)
+- [x] **Part 7:** Log Rotation Management (`logrotate`)
+- [x] **Part 8:** Orderly Teardown (`04_cleanup.sh`)
 
 
 ### Part 1: Service Identity (`01_create_user.sh`)
@@ -34,6 +34,13 @@ In production infrastructure, applications should never run under `root` or a pe
 * **Verification:** Outputs user credentials and group assignments via `id` and `getent passwd` to validate successful provisioning.
 
 
+#### Verification
+
+![Service Identity Variable](screenshots/00_svc_name.png)
+![Service Account Created](screenshots/01_id_created.png)
+
+---
+
 ### Part 2: Fast Scratch Space (`02_setup_tmpfs.sh`)
 
 #### Purpose & DevOps Context
@@ -47,7 +54,11 @@ To handle high-throughput ephemeral caching workloads without introducing physic
 * **Access Boundary:** Reassigns path ownership to `$SVC_NAME:$SVC_NAME` via `chown`, ensuring the unprivileged service user can write files while preserving isolated directory permissions.
 * **Storage Validation:** Runs `df -h` to verify mount point configuration and capacity constraints.
 
+#### Verification
+*Baseline empty mount:*
+![tmpfs Before Stress](screenshots/02_df_before.png)
 
+---
 
 ### Part 3: Chaos Engineering & Fault Injection (`03_stress_and_populate.sh`)
 
@@ -62,6 +73,20 @@ Validating system reliability under adverse conditions prevents unexpected produ
 * **CPU & RAM Saturation:** Invokes `stress-ng` executing under the unprivileged service identity (`sudo -u "$SVC_NAME"`), constraining stress threads to dedicated resource budgets.
 * **Telemetry Verification:** Captures transient memory utilization swings across `free -h` intervals and verifies through `dmesg | grep -i oom` whether the Linux kernel invoked the Out-Of-Memory Killer.
 
+#### Verification
+
+*Filesystem capacity saturated (ENOSPC behavior):*
+![tmpfs Saturated](screenshots/02_df_after.png)
+
+*Memory transitions (Baseline, During Load, Post-Recovery):*
+![Memory Baseline](screenshots/03_free_before.png)
+![Memory Under Load](screenshots/03_free_during.png)
+![Memory Recovered](screenshots/03_free_after.png)
+
+*Kernel Out-Of-Memory (OOM) verification:*
+![Kernel OOM Check](screenshots/03_dmesg_oom.png)
+
+---
 
 ### Part 4: SSH Key-Based Access Configuration
 
@@ -88,7 +113,12 @@ Default SSH configurations listening on port 22 with password authentication ena
 * **User Whitelisting (`AllowUsers`):** Explicitly whitelists authorized accounts (`bgdsvc_tamjeed`), automatically rejecting connection attempts from unlisted system identities.
 * **Verification:** Validated via socket binding (`ss -tulpn`) and successful key handshake over port 2222.
 
+#### Verification
 
+*Key authentication over hardened port 2222:*
+![SSH Hardened Connection](screenshots/04_ssh_success.png)
+
+---
 
 ### Part 6: Scheduled Automation with Cron
 
@@ -104,6 +134,13 @@ Manual server inspection is unscalable and error-prone. Implementing scheduled b
   * `*/5 * * * *`: Runs telemetry collection every 5 minutes.
   * `0 2 * * *`: Executes scratch storage pruning nightly at 02:00 UTC.
 
+
+#### Verification
+
+*Installed Crontab schedules:*
+![Crontab Configuration](screenshots/05_crontab_l.png)
+
+---
 
 
   ### Part 7: Log Rotation Management (`logrotate`)
@@ -142,3 +179,8 @@ Automated infrastructure deprovisioning must adhere to reverse-dependency order.
   5. `userdel -r`: Deletes the system account and purges `/home/$SVC_NAME`.
 * **Idempotency Safeguards:** Employs defensive guards (`mountpoint -q`, `id ... &>/dev/null`, and non-blocking exit codes `|| true`) guaranteeing clean, zero-failure runs even on dirty or previously cleaned states.
 * **Verification Block:** Validates clean state through empty outputs on `id`, `mount | grep`, and `ps -u`.
+
+
+#### Verification
+*Clean host verification (no active user, mounts, or processes):*
+![Teardown Verification](screenshots/06_cleanup_verify.png)
