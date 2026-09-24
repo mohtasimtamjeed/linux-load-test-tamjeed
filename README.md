@@ -87,3 +87,19 @@ Default SSH configurations listening on port 22 with password authentication ena
 * **Cryptographic Enforcement (`PasswordAuthentication no`):** Disables interactive password prompts, mandating key-based cryptographic handshakes.
 * **User Whitelisting (`AllowUsers`):** Explicitly whitelists authorized accounts (`bgdsvc_tamjeed`), automatically rejecting connection attempts from unlisted system identities.
 * **Verification:** Validated via socket binding (`ss -tulpn`) and successful key handshake over port 2222.
+
+
+
+### Part 6: Scheduled Automation with Cron
+
+#### Purpose & DevOps Context
+
+Manual server inspection is unscalable and error-prone. Implementing scheduled background tasks ensures continuous operational telemetry collection for post-incident diagnostics and automated garbage collection to prevent capacity exhaustion in ephemeral workspaces.
+
+#### Implementation Highlights
+
+* **Telemetry Collector (`bgdsvc_tamjeed_monitor.sh`):** Periodically samples system RAM status (`free -h`), scratch filesystem capacity (`df -h`), and active processes owned by the service identity (`ps -u`) into `/var/log/bgdsvc_tamjeed/monitor.log`.
+* **Garbage Collection Pruner (`bgdsvc_tamjeed_cleanup_old_files.sh`):** Uses `find "$TMPDIR" -type f -mtime +1 -delete` to prune scratch files older than 24 hours.
+* **Cron Scheduling:** Installed under the service user crontab (`crontab -u bgdsvc_tamjeed`):
+  * `*/5 * * * *`: Runs telemetry collection every 5 minutes.
+  * `0 2 * * *`: Executes scratch storage pruning nightly at 02:00 UTC.
