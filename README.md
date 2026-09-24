@@ -61,3 +61,14 @@ Validating system reliability under adverse conditions prevents unexpected produ
 * **Controlled Disk Saturation:** Writes pseudo-random binary data via `dd` until filesystem limits are met. Demonstrates safe write termination without kernel file corruption.
 * **CPU & RAM Saturation:** Invokes `stress-ng` executing under the unprivileged service identity (`sudo -u "$SVC_NAME"`), constraining stress threads to dedicated resource budgets.
 * **Telemetry Verification:** Captures transient memory utilization swings across `free -h` intervals and verifies through `dmesg | grep -i oom` whether the Linux kernel invoked the Out-Of-Memory Killer.
+
+
+### Part 4: SSH Key-Based Access Configuration
+
+#### Purpose & DevOps Context
+Deploying public-key authentication eliminates credential transmission over networks and mitigates automated credential attacks. Setting the standard POSIX permission boundaries (`0700` for `.ssh` directories and `0600` for `authorized_keys`) ensures the daemon does not drop connections due to insecure access flags.
+
+#### Implementation Highlights
+* **Cryptographic Standard:** Generated an **ED25519** elliptic-curve key pair, offering smaller key footprint and improved resistance to side-channel attacks compared to traditional RSA keys.
+* **Strict Permission Hardening:** Enforced `chmod 700` on `/home/$SVC_NAME/.ssh` and `chmod 600` on `/home/$SVC_NAME/.ssh/authorized_keys`, ensuring read/write isolation exclusively for the service user.
+* **Defense-in-Depth Verification:** Attempting an SSH handshake authenticates the key pair while respecting the `/usr/sbin/nologin` restriction, terminating interactive shell invocation while validating cryptographic identity.
