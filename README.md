@@ -72,3 +72,18 @@ Deploying public-key authentication eliminates credential transmission over netw
 * **Cryptographic Standard:** Generated an **ED25519** elliptic-curve key pair, offering smaller key footprint and improved resistance to side-channel attacks compared to traditional RSA keys.
 * **Strict Permission Hardening:** Enforced `chmod 700` on `/home/$SVC_NAME/.ssh` and `chmod 600` on `/home/$SVC_NAME/.ssh/authorized_keys`, ensuring read/write isolation exclusively for the service user.
 * **Defense-in-Depth Verification:** Attempting an SSH handshake authenticates the key pair while respecting the `/usr/sbin/nologin` restriction, terminating interactive shell invocation while validating cryptographic identity.
+
+
+### Part 5: SSH Daemon Hardening (`sshd_config`)
+
+#### Purpose & DevOps Context
+
+Default SSH configurations listening on port 22 with password authentication enabled are vulnerable to credential stuffing and unauthorized root access. Hardening the daemon reduces the attack surface and enforces the Principle of Least Privilege across the host perimeter.
+
+#### Implementation Highlights
+
+* **Port Obfuscation (`Port 2222`):** Relocates the listening socket away from standard port 22, deflecting automated vulnerability scanners.
+* **Root Login Prohibition (`PermitRootLogin no`):** Blocks direct targeting of the administrative superuser.
+* **Cryptographic Enforcement (`PasswordAuthentication no`):** Disables interactive password prompts, mandating key-based cryptographic handshakes.
+* **User Whitelisting (`AllowUsers`):** Explicitly whitelists authorized accounts (`bgdsvc_tamjeed`), automatically rejecting connection attempts from unlisted system identities.
+* **Verification:** Validated via socket binding (`ss -tulpn`) and successful key handshake over port 2222.
