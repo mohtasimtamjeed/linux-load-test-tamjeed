@@ -122,3 +122,23 @@ Uncapped application logs inevitably lead to host disk starvation, triggering ca
   * `missingok` & `notifempty`: Bypasses silent errors if logs are absent and skips cycles for unpopulated zero-byte files.
   * `create 0640 bgdsvc_tamjeed bgdsvc_tamjeed`: Recreates the active file with isolated read-write boundaries for the service account.
 * **Verification:** Tested via forced invocation (`logrotate -f`) validating archive generation and ownership retention.
+
+
+
+
+### Part 8: Orderly Teardown (`04_cleanup.sh`)
+
+#### Purpose & DevOps Context
+
+Automated infrastructure deprovisioning must adhere to reverse-dependency order. Attempting to unmount a filesystem while processes hold open descriptors or deleting users while jobs run triggers kernel locking and orphaned process states.
+
+#### Implementation Highlights
+
+* **Reverse Execution Hierarchy:**
+  1. `pkill -u "$SVC_NAME"`: Terminates active processes to release open file handles.
+  2. Automation removal: Purges user crontab (`crontab -r -u`), logrotate definitions, and helper scripts in `/usr/local/bin/`.
+  3. `umount` & `rmdir`: Unmounts the `tmpfs` RAM disk and removes the mount directory.
+  4. Telemetry removal: Cleans `/var/log/$SVC_NAME`.
+  5. `userdel -r`: Deletes the system account and purges `/home/$SVC_NAME`.
+* **Idempotency Safeguards:** Employs defensive guards (`mountpoint -q`, `id ... &>/dev/null`, and non-blocking exit codes `|| true`) guaranteeing clean, zero-failure runs even on dirty or previously cleaned states.
+* **Verification Block:** Validates clean state through empty outputs on `id`, `mount | grep`, and `ps -u`.
