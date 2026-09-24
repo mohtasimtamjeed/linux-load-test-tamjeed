@@ -36,8 +36,8 @@ In production infrastructure, applications should never run under `root` or a pe
 
 #### Verification
 
-![Service Identity Variable](screenshots/00_svc_name.png)
-![Service Account Created](screenshots/01_id_created.png)
+![Service Identity Variable](screenshots/00_svc_name.jpg)
+![Service Account Created](screenshots/01_id_created.jpg)
 
 ---
 
@@ -56,7 +56,7 @@ To handle high-throughput ephemeral caching workloads without introducing physic
 
 #### Verification
 *Baseline empty mount:*
-![tmpfs Before Stress](screenshots/02_df_before.png)
+![tmpfs Before Stress](screenshots/02_df_before.jpg)
 
 ---
 
@@ -76,15 +76,15 @@ Validating system reliability under adverse conditions prevents unexpected produ
 #### Verification
 
 *Filesystem capacity saturated (ENOSPC behavior):*
-![tmpfs Saturated](screenshots/02_df_after.png)
+![tmpfs Saturated](screenshots/02_df_after.jpg)
 
 *Memory transitions (Baseline, During Load, Post-Recovery):*
-![Memory Baseline](screenshots/03_free_before.png)
-![Memory Under Load](screenshots/03_free_during.png)
-![Memory Recovered](screenshots/03_free_after.png)
+![Memory Baseline](screenshots/03_free_before.jpg)
+![Memory Under Load](screenshots/03_free_during.jpg)
+![Memory Recovered](screenshots/03_free_after.jpg)
 
 *Kernel Out-Of-Memory (OOM) verification:*
-![Kernel OOM Check](screenshots/03_dmesg_oom.png)
+![Kernel OOM Check](screenshots/03_dmesg_oom.jpg)
 
 ---
 
@@ -116,7 +116,7 @@ Default SSH configurations listening on port 22 with password authentication ena
 #### Verification
 
 *Key authentication over hardened port 2222:*
-![SSH Hardened Connection](screenshots/04_ssh_success.png)
+![SSH Hardened Connection](screenshots/04_ssh_success.jpg)
 
 ---
 
@@ -138,7 +138,7 @@ Manual server inspection is unscalable and error-prone. Implementing scheduled b
 #### Verification
 
 *Installed Crontab schedules:*
-![Crontab Configuration](screenshots/05_crontab_l.png)
+![Crontab Configuration](screenshots/05_crontab_l.jpg)
 
 ---
 
@@ -183,4 +183,4 @@ Automated infrastructure deprovisioning must adhere to reverse-dependency order.
 
 #### Verification
 *Clean host verification (no active user, mounts, or processes):*
-![Teardown Verification](screenshots/06_cleanup_verify.png)
+![Teardown Verification](screenshots/06_cleanup_verify.jpg)
