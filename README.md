@@ -103,3 +103,22 @@ Manual server inspection is unscalable and error-prone. Implementing scheduled b
 * **Cron Scheduling:** Installed under the service user crontab (`crontab -u bgdsvc_tamjeed`):
   * `*/5 * * * *`: Runs telemetry collection every 5 minutes.
   * `0 2 * * *`: Executes scratch storage pruning nightly at 02:00 UTC.
+
+
+
+  ### Part 7: Log Rotation Management (`logrotate`)
+
+#### Purpose & DevOps Context
+
+Uncapped application logs inevitably lead to host disk starvation, triggering cascade failures across colocated system services. Engineering declarative log rotation enforces retention thresholds, automatic compression, and permission consistency.
+
+#### Implementation Highlights
+
+* **Configuration Path:** Created `/etc/logrotate.d/bgdsvc_tamjeed` targeting all `.log` files in `/var/log/bgdsvc_tamjeed/`.
+* **Policy Parameters:**
+  * `daily` / `rotate 5`: Retains a maximum window of five historical log generations.
+  * `compress`: Compresses historical archives using `gzip` to minimize disk footprint.
+  * `size 10M`: Enforces rotation if log growth exceeds 10MB prior to the daily schedule boundary.
+  * `missingok` & `notifempty`: Bypasses silent errors if logs are absent and skips cycles for unpopulated zero-byte files.
+  * `create 0640 bgdsvc_tamjeed bgdsvc_tamjeed`: Recreates the active file with isolated read-write boundaries for the service account.
+* **Verification:** Tested via forced invocation (`logrotate -f`) validating archive generation and ownership retention.
